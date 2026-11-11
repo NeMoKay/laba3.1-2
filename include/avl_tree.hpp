@@ -1,72 +1,235 @@
 #pragma once
-
 #include <iostream>
-#include <functional>
-#include <string>
 #include <algorithm>
-#include "exceptions.hpp"
+
+
 
 template <typename Key, typename Value = Key>
-class AVLTree {
-public:
-    struct Node {
+class AVLTree{
+private:
+    struct Node{
+        Node(const Key& k, const Value& v);
+
         Key key;
-        Value value;
-        int height;
+        Value val;
+
         Node* left;
         Node* right;
 
-        Node(const Key& k, const Value& v)
-            : key(k), value(v), height(1), left(nullptr), right(nullptr) {}
-            
-        Node(const Key& k)
-            : key(k), value(k), height(1), left(nullptr), right(nullptr) {}
+        int height;
     };
+    Node* root = nullptr;
 
-private:
-    Node* root;
-    size_t size_;
+    int getHeight(Node* node);
+    int set_new_hight(Node* node);
+    int balance_factor(Node* node);
 
-    // Вспомогательные методы работы с высотой и балансом
-    int getHeight(Node* node) const {
-        return node ? node->height : 0;
-    }
+    void left_spin(Node*& node);
+    void right_spin(Node*& node);
+    void balance(Node*& node);
 
-    void updateHeight(Node* node) {
-        if (node) {
-            node->height = 1 + std::max(getHeight(node->left), getHeight(node->right));
-        }
-    }
+    Node* copy_tree(Node* node);
+    Node* delete_tree(Node* node);
 
-    int getBalanceFactor(Node* node) const {
-        return node ? (getHeight(node->left) - getHeight(node->right)) : 0;
-    }
 
 public:
-    AVLTree() : root(nullptr), size_(0) {}
-    
-    ~AVLTree() {
-        clear();
-    }
+    AVLTree() = default;
+    AVLTree(const AVLTree& other);
+    AVLTree(AVLTree&& other) noexcept;
 
-    size_t getSize() const {
-        return size_;
-    }
+    AVLTree& operator=(const AVLTree& other);
+    AVLTree& operator=(AVLTree&& other) noexcept;
+    ~AVLTree();
 
-    bool isEmpty() const {
-        return root == nullptr;
-    }
 
-    void clear() {
-        // Очистка дерева (пост-ордер)
-        std::function<void(Node*)> freeNode = [&](Node* node) {
-            if (!node) return;
-            freeNode(node->left);
-            freeNode(node->right);
-            delete node;
-        };
-        freeNode(root);
-        root = nullptr;
-        size_ = 0;
-    }
+    void insert(const Key& key, const Value& val);
+    void insert(const Key& key);
+
+    void remove(const Key& key);
+    Value search(const Key& key);
+    bool key_be(const Key& key);
+
+    AVLTree<Key, Value>* TakeSubTree(const Key& k);
+
+
+    // AVLTree<Key, Value>* map(Func f);
+    // AVLTree<Key, Value>* where(Predicate p);
+    // Value reduce(Func f, const Value& start_value);
+
 };
+
+
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>::Node::Node(const Key& k, const Value& v){
+    key = k;
+    val = v;
+
+    left = nullptr;
+    right = nullptr;
+
+    height = 0;
+}
+template <typename Key, typename Value>
+int AVLTree<Key, Value>::getHeight(Node* node){
+    if(node == nullptr){
+        return -1;
+    }
+    else{
+        return node->height;
+    }
+}
+
+template <typename Key, typename Value>
+int AVLTree<Key, Value>::set_new_hight(Node* node){
+    if(node == nullptr){
+        throw std::invalid_argument("node = nullptr");
+    }
+    node->height = 1 + std::max(getHeight(node->left), getHeight(node->right));
+    return node->height;
+}
+
+template <typename Key, typename Value>
+int AVLTree<Key, Value>::balance_factor(Node* node){
+    if(node == nullptr){
+        return 0;
+    }
+    return getHeight(node->left) - getHeight(node->right);
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::left_spin(Node*& node){
+    if(node == nullptr || node->right == nullptr){
+        return;
+    }
+
+    Node* left_children = (node->right)->left;
+    Node* temp = node;
+    node = node->right;
+    node->left = temp;
+    temp->right = left_children;
+
+    set_new_hight(temp);
+    set_new_hight(node);
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::right_spin(Node*& node){
+    if(node == nullptr || node->left == nullptr){
+        return;
+    }
+    Node* right_children = (node->left)->right;
+    Node* temp = node;
+    node = node->left;
+    node->right = temp;
+    temp->left = right_children;
+
+    set_new_hight(temp);
+    set_new_hight(node);
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::balance(Node*& node){
+    
+    if (node == nullptr){
+        return;
+    }
+
+    set_new_hight(node);
+    int bf = balance_factor(node);
+    if(bf == 0 || bf == 1 || bf == -1){
+        return;
+    }
+    else{
+        if(bf == 2){
+            if(balance_factor(node->left) == -1){
+                left_spin(node->left);
+                right_spin(node);
+            }
+            else{
+                right_spin(node);
+            }
+        }
+        else{
+            if(balance_factor(node->right) == 1){
+                right_spin(node->right);
+                left_spin(node);
+            }
+            else{
+                left_spin(node);
+            }
+        }
+    }
+}
+
+
+
+template <typename Key, typename Value>
+typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::copy_tree(Node* node){
+
+    if(node == nullptr){
+        return nullptr;
+    }
+    Node* new_node = new Node(node->key, node->val);
+    new_node->height = node->height;
+    new_node->right = copy_tree(node->right);
+    new_node->left = copy_tree(node->left);
+
+    return new_node;
+}
+
+template <typename Key, typename Value>
+typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::delete_tree(Node* node){
+    if(node == nullptr){
+        return nullptr;
+    }
+    else{
+        node->left = delete_tree(node->left);
+        node->right = delete_tree(node->right);
+    }
+
+    delete node;
+    return nullptr;
+}
+
+//------------
+
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>::AVLTree(const AVLTree& other){
+    root = copy_tree(other.root);
+}
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>::AVLTree(AVLTree&& other) noexcept{
+    root = other.root;
+    other.root = nullptr;
+}
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>::~AVLTree(){
+    delete_tree(root);
+}
+
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>& AVLTree<Key, Value>::operator=(const AVLTree& other){
+    if(&other == this){
+        return *this;
+    }
+    delete_tree(root);
+    root = copy_tree(other.root);
+    return *this;
+}
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>& AVLTree<Key, Value>::operator=(AVLTree&& other) noexcept{
+    if(&other == this){
+        return *this;
+    }
+    delete_tree(root);
+    root = other.root;
+    other.root = nullptr;
+    return *this;
+}
+
