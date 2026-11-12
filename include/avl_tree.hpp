@@ -30,6 +30,10 @@ private:
 
     Node* copy_tree(Node* node);
     Node* delete_tree(Node* node);
+    Node* locate(const Key& key);
+    void insert_rec(Node*& ptr, const Key& key, const Value& val);
+    void remove_rec(Node*& ptr, const Key& key);
+
 
 
 public:
@@ -49,7 +53,7 @@ public:
     Value search(const Key& key);
     bool key_be(const Key& key);
 
-    AVLTree<Key, Value>* TakeSubTree(const Key& k);
+    AVLTree* TakeSubTree(const Key& key);
 
 
     // AVLTree<Key, Value>* map(Func f);
@@ -150,6 +154,7 @@ void AVLTree<Key, Value>::balance(Node*& node){
                 right_spin(node);
             }
         }
+
         else{
             if(balance_factor(node->right) == 1){
                 right_spin(node->right);
@@ -189,6 +194,88 @@ typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::delete_tree(Node* node)
     }
 
     delete node;
+    return nullptr;
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::insert_rec(Node*& ptr, const Key& key, const Value& val){
+    if(ptr == nullptr){
+        ptr = new Node(key, val);
+        return;
+    }
+    if(key > ptr->key){
+        insert_rec(ptr->right, key, val);
+    }
+
+    if(key < ptr->key){
+        insert_rec(ptr->left, key, val);
+
+    }
+
+    if(key == ptr->key){
+        return;
+    }
+
+    balance(ptr);
+    
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::remove_rec(Node*& ptr, const Key& key){
+    if(ptr == nullptr){
+        return;
+    }
+    if(key > ptr->key){
+        remove_rec(ptr->right, key);
+    }
+    else if(key < ptr->key){
+        remove_rec(ptr->left, key);
+
+    }
+    else{
+        if(ptr->left == nullptr){
+            Node* temp = ptr;
+            ptr = ptr->right;
+            delete temp;
+        }
+        else if(ptr->right == nullptr){
+            Node* temp = ptr;
+            ptr = ptr->left;
+            delete temp;
+        }
+        else{
+            Node* temp = ptr->right;
+            while(temp->left != nullptr){
+                temp = temp->left;
+            }
+            ptr->key = temp->key;
+            ptr->val = temp->val;
+            remove_rec(ptr->right, ptr->key);
+        }
+
+    }
+
+    if(ptr != nullptr){
+        balance(ptr);
+    }
+}
+
+template <typename Key, typename Value>
+typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::locate(const Key& key){
+    Node* temp = root;
+    while(temp != nullptr){
+        if(key > temp->key){
+            temp = temp->right;
+            continue;
+        }
+        if(key < temp->key){
+            temp = temp->left;
+            continue;
+        }
+        if(key == temp->key){
+            return temp;
+        }
+    }
     return nullptr;
 }
 
@@ -233,3 +320,54 @@ AVLTree<Key, Value>& AVLTree<Key, Value>::operator=(AVLTree&& other) noexcept{
     return *this;
 }
 
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::insert(const Key& key, const Value& val){
+    insert_rec(root, key, val);
+}
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::insert(const Key& key){
+    insert_rec(root, key, key);
+}
+
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::remove(const Key& key){
+    remove_rec(root, key);
+}
+
+template <typename Key, typename Value>
+Value AVLTree<Key, Value>::search(const Key& key){
+    Node* temp = locate(key);
+    if(temp != nullptr){
+        return temp->val;
+    }
+    else{
+        throw std::invalid_argument("Key нет в древе"); 
+    }
+    
+}
+
+
+   
+
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::key_be(const Key& key){
+    return locate(key) != nullptr;
+}
+
+
+template <typename Key, typename Value>
+AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key){
+    Node* temp = locate(key);
+    if(temp == nullptr){
+        return nullptr;
+    }
+
+    AVLTree<Key, Value>* new_tree = new AVLTree<Key, Value>();
+    new_tree->root = copy_tree(temp);
+    
+
+    return new_tree;
+}
