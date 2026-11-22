@@ -1,18 +1,18 @@
 #include "Fixtures.hpp"
 
-TEST_F(AVL_Fixture, def_constructor) {
+TEST_F(AVL_Fixture, def_constructor){
     EXPECT_TRUE(empty_tree->IsEmpty()) << "Ожидалось пустое дерево. По факту IsEmpty() == false";
     EXPECT_EQ(empty_tree->len(), 0) << "Ожидаемая длина 0. По факту : " << empty_tree->len();
     EXPECT_THROW(empty_tree->search(42), std::invalid_argument) << "Ожидается std::invalid_argument при поиске в пустом дереве. По факту : исключение не выброшено";
     EXPECT_THROW(empty_tree->Get(0), std::invalid_argument) << "Ожидается std::invalid_argument при Get(0) в пустом дереве. По факту : исключение не выброшено";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Текущее дерево (пустое)---\n";
         std::cout << show_tree(*empty_tree);
     }
 }
 
-TEST_F(AVL_Fixture, copy_and_move_constructors) {
+TEST_F(AVL_Fixture, copy_and_move_constructors){
     AVLTree<int, int> copy(*tree_int);
     EXPECT_EQ(copy.len(), 5) << "Ожидаемая длина копии 5. По факту : " << copy.len();
     EXPECT_TRUE(copy == *tree_int) << "Ожидалось равенство копии и исходного дерева";
@@ -25,13 +25,13 @@ TEST_F(AVL_Fixture, copy_and_move_constructors) {
     EXPECT_EQ(moved.len(), 6) << "Ожидаемая длина перемещенного дерева 6. По факту : " << moved.len();
     EXPECT_TRUE(copy.IsEmpty()) << "После std::move исходное дерево должно быть пустым";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Исходное дерево---\n" << show_tree(*tree_int);
         std::cout << "\n---Перемещенное дерево---\n" << show_tree(moved);
     }
 }
 
-TEST_F(AVL_Fixture, assignment_operators) {
+TEST_F(AVL_Fixture, assignment_operators){
     AVLTree<int, int> assigned;
     assigned = *tree_int;
     EXPECT_TRUE(assigned == *tree_int) << "Ожидалось равенство после копирующего присваивания";
@@ -47,15 +47,15 @@ TEST_F(AVL_Fixture, assignment_operators) {
 }
 
 class AVLSearchParamTest : public AVL_Fixture,
-                           public testing::WithParamInterface<std::tuple<int, int>> {};
+                           public testing::WithParamInterface<std::tuple<int, int>>{};
 
-TEST_P(AVLSearchParamTest, search_and_key_be) {
+TEST_P(AVLSearchParamTest, search_and_key_be){
     auto [key, expected_val] = GetParam();
 
     EXPECT_TRUE(tree_int->key_be(key)) << "Ожидалось наличие ключа " << key << " в дереве";
     EXPECT_EQ(tree_int->search(key), expected_val) << "Для ключа " << key << " ожидалось значение " << expected_val << ". По факту : " << tree_int->search(key);
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Текущее дерево tree_int---\n";
         std::cout << show_tree(*tree_int);
     }
@@ -70,14 +70,14 @@ INSTANTIATE_TEST_SUITE_P(SearchParams, AVLSearchParamTest, testing::Values(
 ));
 
 class AVLGetByIndexParamTest : public AVL_Fixture,
-                               public testing::WithParamInterface<std::tuple<int, int>> {};
+                               public testing::WithParamInterface<std::tuple<int, int>>{};
 
-TEST_P(AVLGetByIndexParamTest, get_by_sorted_index) {
+TEST_P(AVLGetByIndexParamTest, get_by_sorted_index){
     auto [index, expected_val] = GetParam();
 
     EXPECT_EQ(tree_int->Get(index), expected_val) << "Для индекса " << index << " ожидалось значение " << expected_val << ". По факту : " << tree_int->Get(index);
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Текущее дерево tree_int---\n";
         std::cout << show_tree(*tree_int);
     }
@@ -92,17 +92,17 @@ INSTANTIATE_TEST_SUITE_P(GetIndexParams, AVLGetByIndexParamTest, testing::Values
 ));
 
 class AVLInvalidArgParamTest : public AVL_Fixture,
-                               public testing::WithParamInterface<std::tuple<int, int, std::string>> {};
+                               public testing::WithParamInterface<std::tuple<int, int, std::string>>{};
 
-TEST_P(AVLInvalidArgParamTest, invalid_arguments_throw) {
+TEST_P(AVLInvalidArgParamTest, invalid_arguments_throw){
     auto [missing_key, bad_index, bad_order] = GetParam();
 
     EXPECT_FALSE(tree_int->key_be(missing_key)) << "Ключ " << missing_key << " не должен присутствовать в дереве";
     EXPECT_THROW(tree_int->search(missing_key), std::invalid_argument) << "Ожидается std::invalid_argument при search(" << missing_key << "). По факту : исключение не выброшено";
     EXPECT_THROW(tree_int->Get(bad_index), std::invalid_argument) << "Ожидается std::invalid_argument при Get(" << bad_index << "). По факту : исключение не выброшено";
-    EXPECT_THROW(tree_int->bypass(bad_order, [](const int&, const int&) {}), std::invalid_argument) << "Ожидается std::invalid_argument для строки обхода \"" << bad_order << "\". По факту : исключение не выброшено";
+    EXPECT_THROW(tree_int->bypass(bad_order, [](const int&, const int&){}), std::invalid_argument) << "Ожидается std::invalid_argument для строки обхода \"" << bad_order << "\". По факту : исключение не выброшено";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Текущее дерево tree_int при проверке исключений---\n";
         std::cout << show_tree(*tree_int);
     }
@@ -115,7 +115,7 @@ INSTANTIATE_TEST_SUITE_P(InvalidArgParams, AVLInvalidArgParamTest, testing::Valu
     std::make_tuple(999, 99, "KLPP")
 ));
 
-TEST_F(AVL_Fixture, balancing_all_rotations) {
+TEST_F(AVL_Fixture, balancing_all_rotations){
     AVLTree<int, int> ll;
     ll.insert(30, 30);
     ll.insert(20, 20);
@@ -128,21 +128,21 @@ TEST_F(AVL_Fixture, balancing_all_rotations) {
     rr.insert(10, 10);
     rr.insert(20, 20);
     rr.insert(30, 30);
-    EXPECT_TRUE(ll == rr) << "После балансировки LL и RR деревья с {10, 20, 30} должны иметь идентичную форму!";
+    EXPECT_TRUE(ll == rr) << "После балансировки LL и RR деревья с{10, 20, 30} должны иметь идентичную форму!";
 
     AVLTree<int, int> lr;
     lr.insert(30, 30);
     lr.insert(10, 10);
     lr.insert(20, 20);
-    EXPECT_TRUE(ll == lr) << "После LR-балансировки дерево {30, 10, 20} должно совпасть с эталоном";
+    EXPECT_TRUE(ll == lr) << "После LR-балансировки дерево{30, 10, 20} должно совпасть с эталоном";
 
     AVLTree<int, int> rl;
     rl.insert(10, 10);
     rl.insert(30, 30);
     rl.insert(20, 20);
-    EXPECT_TRUE(ll == rl) << "После RL-балансировки дерево {10, 30, 20} должно совпасть с эталоном";
+    EXPECT_TRUE(ll == rl) << "После RL-балансировки дерево{10, 30, 20} должно совпасть с эталоном";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---LL---\n" << show_tree(ll);
         std::cout << "\n---RR---\n" << show_tree(rr);
         std::cout << "\n---LR---\n" << show_tree(lr);
@@ -150,7 +150,7 @@ TEST_F(AVL_Fixture, balancing_all_rotations) {
     }
 }
 
-TEST_F(AVL_Fixture, insert_overwrite_and_remove) {
+TEST_F(AVL_Fixture, insert_overwrite_and_remove){
     tree_int->insert(69, 9999);
     EXPECT_EQ(tree_int->len(), 5) << "Ожидаемая длина 5 при обновлении ключа. По факту : " << tree_int->len();
     EXPECT_EQ(tree_int->search(69), 9999) << "Ожидалось обновленное значение 9999. По факту : " << tree_int->search(69);
@@ -168,16 +168,16 @@ TEST_F(AVL_Fixture, insert_overwrite_and_remove) {
     tree_int->remove(123456);
     EXPECT_EQ(tree_int->len(), 2) << "Удаление отсутствующего ключа изменило размер дерева";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Исходное дерево---\n" << show_tree(*orig_tree_int);
         std::cout << "\n---Текущее дерево после удалений---\n" << show_tree(*tree_int);
     }
 }
 
 class AVLBypassParamTest : public AVL_Fixture,
-                           public testing::WithParamInterface<std::tuple<std::string, std::vector<int>>> {};
+                           public testing::WithParamInterface<std::tuple<std::string, std::vector<int>>>{};
 
-TEST_P(AVLBypassParamTest, all_six_traversals) {
+TEST_P(AVLBypassParamTest, all_six_traversals){
     auto [order, expected_keys] = GetParam();
 
     AVLTree<int, int> t;
@@ -186,13 +186,13 @@ TEST_P(AVLBypassParamTest, all_six_traversals) {
     t.insert(30, 30);
 
     std::vector<int> actual_keys;
-    t.bypass(order, [&actual_keys](const int& k, const int&) {
+    t.bypass(order, [&actual_keys](const int& k, const int&){
         actual_keys.push_back(k);
     });
 
     EXPECT_EQ(actual_keys, expected_keys) << "Неверный порядок ключей при обходе \"" << order << "\"";
 
-    if (testing::Test::HasFailure()) {
+    if (testing::Test::HasFailure()){
         std::cout << "\n---Тестируем обход " << order << "---\n";
         std::cout << show_tree(t);
     }
@@ -207,9 +207,9 @@ INSTANTIATE_TEST_SUITE_P(BypassParams, AVLBypassParamTest, testing::Values(
     std::make_tuple("PKL", std::vector<int>{30, 20, 10})
 ));
 
-TEST_F(AVL_Fixture, subtree_extract_and_contains) {
+TEST_F(AVL_Fixture, subtree_extract_and_contains){
     AVLTree<int, int> base;
-    for (int x : {40, 20, 60, 10, 30, 50, 70}) {
+    for (int x :{40, 20, 60, 10, 30, 50, 70}){
         base.insert(x, x * 10);
     }
 
@@ -229,7 +229,7 @@ TEST_F(AVL_Fixture, subtree_extract_and_contains) {
     delete sub;
 }
 
-TEST_F(AVL_Fixture, map_where_reduce) {
+TEST_F(AVL_Fixture, map_where_reduce){
     AVLTree<int, int>* mapped = tree_int->map(double_val);
     EXPECT_EQ(mapped->len(), 5) << "map не должен менять количество элементов. По факту : " << mapped->len();
     EXPECT_EQ(mapped->search(42), 840) << "Ожидалось 420 * 2 = 840. По факту : " << mapped->search(42);
@@ -259,7 +259,7 @@ TEST_F(AVL_Fixture, map_where_reduce) {
     delete big_keys;
 }
 
-TEST_F(AVL_Fixture, iterator_traversal_and_exceptions) {
+TEST_F(AVL_Fixture, iterator_traversal_and_exceptions){
     auto empty_it = empty_tree->GetIterator();
     EXPECT_FALSE(empty_it.HasNext()) << "У пустого дерева итератор не должен иметь элементов";
     EXPECT_FALSE(empty_it.Next()) << "Next() на пустом итераторе должен вернуть false";
@@ -267,14 +267,14 @@ TEST_F(AVL_Fixture, iterator_traversal_and_exceptions) {
     EXPECT_THROW(empty_it.GetCurrentKey(), std::invalid_argument) << "Ожидается std::invalid_argument при GetCurrentKey() на пустом итераторе";
 
     std::vector<int> iterated_keys;
-    for (auto it = tree_int->GetIterator(); it.HasNext(); it.Next()) {
+    for (auto it = tree_int->GetIterator(); it.HasNext(); it.Next()){
         iterated_keys.push_back(it.GetCurrentKey());
     }
-    std::vector<int> expected = {42, 52, 67, 69, 228};
+    std::vector<int> expected ={42, 52, 67, 69, 228};
     EXPECT_EQ(iterated_keys, expected) << "Итератор должен обходить дерево в отсортированном порядке (LKP)";
 }
 
-TEST_F(AVL_Fixture, different_data_types) {
+TEST_F(AVL_Fixture, different_data_types){
     EXPECT_EQ(tree_double->len(), 3);
     EXPECT_DOUBLE_EQ(tree_double->search(1.5), 10.5);
 

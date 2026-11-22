@@ -127,7 +127,7 @@ AVLTree<Key, Value>::Node::Node(const Key& k, const Value& v){
 }
 
 template <typename Key, typename Value>
-bool AVLTree<Key, Value>::Node::operator==(const Node& other) const {
+bool AVLTree<Key, Value>::Node::operator==(const Node& other) const{
     return key == other.key && val == other.val;
 }
 
@@ -543,7 +543,7 @@ bool AVLTree<Key, Value>::IfInSubTree(const AVLTree<Key, Value>& sub) const{
 
 template <typename Key, typename Value>
 template <typename Func>
-void AVLTree<Key, Value>::bypass(const std::string& order, Func action) const {
+void AVLTree<Key, Value>::bypass(const std::string& order, Func action) const{
     bypass_string(order);
     bypass_rec(root, order, action);
 }
