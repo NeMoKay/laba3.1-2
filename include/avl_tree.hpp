@@ -2,6 +2,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <stack>
+#include <string>
+#include <algorithm>
 
 
 template <typename Key, typename Value = Key>
@@ -9,6 +11,7 @@ class AVLTree{
 private:
     struct Node{
         Node(const Key& k, const Value& v);
+        bool operator==(const Node& other) const;
 
         Key key;
         Value val;
@@ -34,7 +37,15 @@ private:
     void insert_rec(Node*& ptr, const Key& key, const Value& val);
     void remove_rec(Node*& ptr, const Key& key);
 
+    int len_rec(Node* node) const;
 
+    void bypass_string(const std::string& order) const;
+    template <typename Func> 
+    void bypass_rec(Node* node, const std::string& order, Func action) const;
+
+    bool IfInSubTree_rec(Node* node1, Node* node2) const;
+
+    
 
 public:
     AVLTree() = default;
@@ -45,6 +56,10 @@ public:
     AVLTree& operator=(AVLTree&& other) noexcept;
     ~AVLTree();
 
+    bool operator==(const AVLTree<Key, Value>& other) const;
+    bool operator!=(const AVLTree<Key, Value>& other) const;
+
+
 
     void insert(const Key& key, const Value& val);
     void insert(const Key& key);
@@ -53,7 +68,17 @@ public:
     Value search(const Key& key) const;
     bool key_be(const Key& key) const;
 
+    int len() const;
+    bool IsEmpty() const;
+    Value Get(int index) const;
+
+    template <typename Func> 
+    void bypass(const std::string& order, Func action) const;
+
+
     AVLTree* TakeSubTree(const Key& key) const;
+    bool IfInSubTree(const AVLTree<Key, Value>& sub) const;
+
 
     template <typename Func>
     AVLTree<Key, Value>* map(Func f) const;
@@ -100,6 +125,12 @@ AVLTree<Key, Value>::Node::Node(const Key& k, const Value& v){
 
     height = 0;
 }
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::Node::operator==(const Node& other) const {
+    return key == other.key && val == other.val;
+}
+
 template <typename Key, typename Value>
 int AVLTree<Key, Value>::getHeight(Node* node){
     if(node == nullptr){
@@ -284,6 +315,16 @@ void AVLTree<Key, Value>::remove_rec(Node*& ptr, const Key& key){
     }
 }
 
+
+template <typename Key, typename Value>
+int AVLTree<Key, Value>::len_rec(Node* node) const{
+    if(node == nullptr){
+        return 0;
+    }
+    return 1 + len_rec(node->left) + len_rec(node->right);
+}
+
+
 template <typename Key, typename Value>
 typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::locate(const Key& key) const{
     Node* temp = root;
@@ -302,6 +343,64 @@ typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::locate(const Key& key) 
     }
     return nullptr;
 }
+
+template <typename Key, typename Value>
+void AVLTree<Key, Value>::bypass_string(const std::string& order) const{
+    if(order.length() != 3){
+        throw std::invalid_argument("Несовподенние длинны команды обхода");
+    }
+    int c_K = 0;
+    int c_L = 0;
+    int c_P = 0;
+
+    for(auto i : order){
+        if(i == 'K'){
+            c_K++;
+        }
+        if(i == 'L'){
+            c_L++;
+        }
+        if(i == 'P'){
+            c_P++;
+        }
+    }
+    if(c_K != 1 || c_L != 1 || c_P != 1){
+        throw std::invalid_argument("Несоответсвие команды обхода");
+    }
+}
+
+
+template <typename Key, typename Value>
+template <typename Func> 
+void AVLTree<Key, Value>::bypass_rec(Node* node, const std::string& order, Func action) const{
+    if(node == nullptr){
+        return;
+    }
+
+    for(auto letter : order){
+        if(letter == 'K'){
+            action(node->key, node->val);
+        }
+        else if(letter == 'L'){
+            bypass_rec(node->left, order, action);
+        }
+        else if (letter == 'P'){
+            bypass_rec(node->right, order, action);
+        }
+    }
+
+}
+
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::IfInSubTree_rec(Node* node1, Node* node2) const{
+    if(node1 == nullptr || node2 == nullptr){
+        return node1 == node2;
+    }
+    return (*node1 == *node2) && IfInSubTree_rec(node1->left, node2->left) && IfInSubTree_rec(node1->right, node2->right);
+}
+
+
 
 //------------
 
@@ -322,6 +421,15 @@ AVLTree<Key, Value>::~AVLTree(){
     delete_tree(root);
 }
 
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::operator==(const AVLTree<Key, Value>& other) const{
+    return IfInSubTree_rec(root, other.root);
+}
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::operator!=(const AVLTree<Key, Value>& other) const{
+    return !(*this == other);
+}
 
 template <typename Key, typename Value>
 AVLTree<Key, Value>& AVLTree<Key, Value>::operator=(const AVLTree& other){
@@ -380,6 +488,36 @@ bool AVLTree<Key, Value>::key_be(const Key& key) const{
 }
 
 
+
+template <typename Key, typename Value>
+int AVLTree<Key, Value>::len() const{
+    return len_rec(root);
+}
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::IsEmpty() const{
+    return root == nullptr;
+}
+
+template <typename Key, typename Value>
+Value AVLTree<Key, Value>::Get(int index) const{
+    if(index < 0){
+        throw std::invalid_argument("Отрицательный индекс");
+    }
+    int i = 0;
+    for(auto it = GetIterator(); it.HasNext(); it.Next()){
+        if(i == index){
+            return it.GetCurrentItem();
+        }
+        i++;
+    }
+    throw std::invalid_argument("Индекс выходит за пределы дерева");
+}
+
+
+
+
+
 template <typename Key, typename Value>
 AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key) const{
     Node* temp = locate(key);
@@ -393,6 +531,24 @@ AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key) const{
 
     return new_tree;
 }
+
+template <typename Key, typename Value>
+bool AVLTree<Key, Value>::IfInSubTree(const AVLTree<Key, Value>& sub) const{
+    if(sub.root == nullptr){
+        return true;
+    }
+    return IfInSubTree_rec(this->locate((sub.root)->key), sub.root);
+}
+
+
+template <typename Key, typename Value>
+template <typename Func>
+void AVLTree<Key, Value>::bypass(const std::string& order, Func action) const {
+    bypass_string(order);
+    bypass_rec(root, order, action);
+}
+
+
 //-------------
 
 
