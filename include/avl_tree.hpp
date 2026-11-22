@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <stdexcept>
 #include <stack>
 
 
@@ -27,9 +28,9 @@ private:
     void right_spin(Node*& node);
     void balance(Node*& node);
 
-    Node* copy_tree(Node* node);
+    Node* copy_tree(Node* node) const;
     Node* delete_tree(Node* node);
-    Node* locate(const Key& key);
+    Node* locate(const Key& key) const;
     void insert_rec(Node*& ptr, const Key& key, const Value& val);
     void remove_rec(Node*& ptr, const Key& key);
 
@@ -49,15 +50,19 @@ public:
     void insert(const Key& key);
 
     void remove(const Key& key);
-    Value search(const Key& key);
-    bool key_be(const Key& key);
+    Value search(const Key& key) const;
+    bool key_be(const Key& key) const;
 
-    AVLTree* TakeSubTree(const Key& key);
+    AVLTree* TakeSubTree(const Key& key) const;
 
+    template <typename Func>
+    AVLTree<Key, Value>* map(Func f) const;
 
-    // AVLTree<Key, Value>* map(Func f);
-    // AVLTree<Key, Value>* where(Predicate p);
-    // Value reduce(Func f, const Value& start_value);
+    template <typename Predicate>
+    AVLTree<Key, Value>* where(Predicate p) const;
+
+    template <typename Func>
+    Value reduce(Func f, const Value& start_value) const;
 
 
 
@@ -67,18 +72,19 @@ public:
         void push_left_branch(Node* node);
     public:
         TreeIterator(Node* root);
-        bool HasNext();
-        Value GetCurrentItem();
+        bool HasNext() const;
+        Value GetCurrentItem() const;
+        Key GetCurrentKey() const;
         bool Next();
 
-        Value operator*();
+        Value operator*() const;
         TreeIterator& operator++();
-        bool operator!=(const TreeIterator& other);
+        bool operator!=(const TreeIterator& other) const;
     };
 
-    TreeIterator GetIterator();
-    TreeIterator begin();
-    TreeIterator end();
+    TreeIterator GetIterator() const;
+    TreeIterator begin() const;
+    TreeIterator end() const;
 
 };
 
@@ -190,7 +196,7 @@ void AVLTree<Key, Value>::balance(Node*& node){
 
 
 template <typename Key, typename Value>
-typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::copy_tree(Node* node){
+typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::copy_tree(Node* node) const{
 
     if(node == nullptr){
         return nullptr;
@@ -230,6 +236,7 @@ void AVLTree<Key, Value>::insert_rec(Node*& ptr, const Key& key, const Value& va
         insert_rec(ptr->left, key, val);
     }
     else{
+        ptr->val = val;
         return;
     }
 
@@ -278,7 +285,7 @@ void AVLTree<Key, Value>::remove_rec(Node*& ptr, const Key& key){
 }
 
 template <typename Key, typename Value>
-typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::locate(const Key& key){
+typename AVLTree<Key, Value>::Node* AVLTree<Key, Value>::locate(const Key& key) const{
     Node* temp = root;
     while(temp != nullptr){
         if(key > temp->key){
@@ -354,7 +361,7 @@ void AVLTree<Key, Value>::remove(const Key& key){
 }
 
 template <typename Key, typename Value>
-Value AVLTree<Key, Value>::search(const Key& key){
+Value AVLTree<Key, Value>::search(const Key& key) const{
     Node* temp = locate(key);
     if(temp != nullptr){
         return temp->val;
@@ -368,13 +375,13 @@ Value AVLTree<Key, Value>::search(const Key& key){
 
 
 template <typename Key, typename Value>
-bool AVLTree<Key, Value>::key_be(const Key& key){
+bool AVLTree<Key, Value>::key_be(const Key& key) const{
     return locate(key) != nullptr;
 }
 
 
 template <typename Key, typename Value>
-AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key){
+AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key) const{
     Node* temp = locate(key);
     if(temp == nullptr){
         return nullptr;
@@ -386,7 +393,43 @@ AVLTree<Key, Value>* AVLTree<Key, Value>::TakeSubTree(const Key& key){
 
     return new_tree;
 }
+//-------------
 
+
+template <typename Key, typename Value>
+template <typename Func>
+AVLTree<Key, Value>* AVLTree<Key, Value>::map(Func f) const{
+    AVLTree<Key, Value>* new_tree = new AVLTree<Key, Value>();
+    for(auto it = GetIterator(); it.HasNext(); it.Next()){
+        new_tree->insert(it.GetCurrentKey(), f(it.GetCurrentItem()));
+    }
+    return new_tree;
+}
+
+template <typename Key, typename Value>
+template <typename Predicate>
+AVLTree<Key, Value>* AVLTree<Key, Value>::where(Predicate f) const{
+    AVLTree<Key, Value>* new_tree = new AVLTree<Key, Value>();
+
+    for(auto it = GetIterator(); it.HasNext(); it.Next()){
+        if(f(it.GetCurrentItem())){
+            new_tree->insert(it.GetCurrentKey(), it.GetCurrentItem());
+        }
+    }
+    return new_tree;
+}
+
+
+
+template <typename Key, typename Value>
+template <typename Func>
+Value AVLTree<Key, Value>::reduce(Func f, const Value& start_value) const{
+    Value res = start_value;
+    for(auto temp : *this){
+       res = f(temp, res);
+    }
+    return res;
+}
 
 //--------------
 
@@ -407,16 +450,24 @@ AVLTree<Key, Value>::TreeIterator::TreeIterator(Node* root){
 
 
 template <typename Key, typename Value>
-bool AVLTree<Key, Value>::TreeIterator::HasNext(){
+bool AVLTree<Key, Value>::TreeIterator::HasNext() const{
     return !path.empty();
 }
 
 template <typename Key, typename Value>
-Value AVLTree<Key, Value>::TreeIterator::GetCurrentItem(){
+Value AVLTree<Key, Value>::TreeIterator::GetCurrentItem() const{
     if(path.empty()){
         throw std::invalid_argument("Список пуст");
     }
     return path.top()->val;
+}
+
+template <typename Key, typename Value>
+Key AVLTree<Key, Value>::TreeIterator::GetCurrentKey() const{
+    if(path.empty()){
+        throw std::invalid_argument("Список пуст");
+    }
+    return path.top()->key;
 }
 
 template <typename Key, typename Value>
@@ -431,14 +482,14 @@ bool AVLTree<Key, Value>::TreeIterator::Next(){
 }
 
 template <typename Key, typename Value>
-typename AVLTree<Key, Value>::TreeIterator AVLTree<Key, Value>::GetIterator(){
+typename AVLTree<Key, Value>::TreeIterator AVLTree<Key, Value>::GetIterator() const{
     return TreeIterator(root);
 }
 
 
 
 template <typename Key, typename Value>
-Value AVLTree<Key, Value>::TreeIterator::operator*(){
+Value AVLTree<Key, Value>::TreeIterator::operator*() const{
     return GetCurrentItem();
 }
 
@@ -449,7 +500,7 @@ typename AVLTree<Key, Value>::TreeIterator& AVLTree<Key, Value>::TreeIterator::o
 }
 
 template <typename Key, typename Value>
-bool AVLTree<Key, Value>::TreeIterator::operator!=(const TreeIterator& other){
+bool AVLTree<Key, Value>::TreeIterator::operator!=(const TreeIterator& other) const{
     if(path.empty() && other.path.empty()){
         return false;
     }
@@ -460,11 +511,11 @@ bool AVLTree<Key, Value>::TreeIterator::operator!=(const TreeIterator& other){
 }
 
 template <typename Key, typename Value>
-typename AVLTree<Key, Value>::TreeIterator begin(){
+typename AVLTree<Key, Value>::TreeIterator AVLTree<Key, Value>::begin() const{
     return TreeIterator(root);
 }
 
 template <typename Key, typename Value>
-typename AVLTree<Key, Value>::TreeIterator end(){
+typename AVLTree<Key, Value>::TreeIterator AVLTree<Key, Value>::end() const{
     return TreeIterator(nullptr);
 }
