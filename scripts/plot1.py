@@ -5,7 +5,11 @@ df = pd.read_csv("benchmark.csv")
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 4.8), dpi=150)
 
-operations = [("AVL_Insert_ms", "StdMap_Insert_ms", "Вставка (Insert)"), ("AVL_Search_ms", "StdMap_Search_ms", "Поиск (Search)"),("AVL_Remove_ms", "StdMap_Remove_ms", "Удаление (Remove)")]
+operations = [
+    ("AVL_Insert_ms", "StdMap_Insert_ms", "Вставка (Insert)"),
+    ("AVL_Search_ms", "StdMap_Search_ms", "Поиск (Search)"),
+    ("AVL_Remove_ms", "StdMap_Remove_ms", "Удаление (Remove)")
+]
 
 for ax, (avl_col, std_col, title) in zip(axes, operations):
     ax.plot(df["N"], df[avl_col], marker="o", linewidth=2, markersize=5, label="AVLTree")

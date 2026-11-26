@@ -5,8 +5,11 @@
 #include <tuple>
 #include <vector>
 #include <cmath>
+#include <fstream>
+#include <cstdio>
 #include "Avl_tree.hpp"
 #include "Set.hpp"
+#include "VirtualFS.hpp"
 
 
 inline int double_val(int x){ return x * 2; }
@@ -49,7 +52,6 @@ inline std::string show_tree(const AVLTree<Key, Value>& tree){
     return res;
 }
 
-template <>
 inline std::string show_tree(const AVLTree<std::string, std::string>& tree){
     if (tree.IsEmpty()){
         return "[Пустое дерево]\n";
@@ -57,6 +59,19 @@ inline std::string show_tree(const AVLTree<std::string, std::string>& tree){
     std::string res = "[len=" + std::to_string(tree.len()) + " | LKP: ";
     for (auto it = tree.GetIterator(); it.HasNext(); it.Next()){
         res += "(" + it.GetCurrentKey() + ":" + it.GetCurrentItem() + ") ";
+    }
+    res += "]\n";
+    return res;
+}
+
+inline std::string show_tree(const AVLTree<std::string, VirtualFS::FSNode>& tree){
+    if (tree.IsEmpty()){
+        return "[Пустое дерево FS]\n";
+    }
+    std::string res = "[len=" + std::to_string(tree.len()) + " | LKP: ";
+    for (auto it = tree.GetIterator(); it.HasNext(); it.Next()){
+        const auto& node = it.GetCurrentItem();
+        res += "(" + it.GetCurrentKey() + " -> " + (node.is_directory ? "DIR" : "FILE") + ") ";
     }
     res += "]\n";
     return res;
@@ -74,6 +89,15 @@ inline std::string show_set(const Set<T>& s){
         }
     }
     res += "}\n";
+    return res;
+}
+
+inline std::string show_fs(const VirtualFS& fs){
+    std::string res = "[pwd=" + fs.pwd() + " | содержимое текущей директории: ";
+    for (const auto& item : fs.ls()){
+        res += item.name + (item.is_directory ? "/ " : " ");
+    }
+    res += "]\n";
     return res;
 }
 
@@ -153,5 +177,45 @@ protected:
         delete set_B;
         delete set_C;
         delete set_str;
+    }
+};
+
+class VirtualFS_Fixture : public testing::Test{
+protected:
+    VirtualFS* empty_fs;
+    VirtualFS* fs;
+
+    std::string disk_file_1 = "test_disk_1.txt";
+    std::string disk_file_2 = "test_disk_2.txt";
+    std::string disk_file_auto = "auto_disk.txt";
+
+    void create_real_file(const std::string& filename, const std::string& text){
+        std::ofstream out(filename);
+        out << text;
+        out.close();
+    }
+
+    void SetUp() override{
+        create_real_file(disk_file_1, "Первая строка\nВторая строка");
+        create_real_file(disk_file_2, "Секретный отчет");
+        create_real_file(disk_file_auto, "Автопривязка");
+
+        empty_fs = new VirtualFS();
+        fs = new VirtualFS();
+
+        fs->mkdir("/docs");
+        fs->mkdir("/docs/labs");
+        fs->mkdir("/src");
+        fs->touch("/docs/readme.txt", disk_file_1);
+        fs->touch("/docs/labs/report.txt", disk_file_2);
+    }
+
+    void TearDown() override{
+        delete empty_fs;
+        delete fs;
+
+        std::remove(disk_file_1.c_str());
+        std::remove(disk_file_2.c_str());
+        std::remove(disk_file_auto.c_str());
     }
 };
